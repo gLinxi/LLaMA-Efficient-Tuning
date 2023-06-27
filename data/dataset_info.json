@@ -109,5 +109,23 @@
       "response": "",
       "history": ""
     }
+  },
+  "intention_train": {
+      "file_name": "/home/apps/gzx/LocalDataHub/sft/intention_training_task.json",
+      "columns": {
+          "prompt": "instruction",
+          "query": "input",
+          "response": "output",
+          "history": ""
+      }
+  },
+  "rec_reason_train": {
+      "file_name": "/home/apps/gzx/LocalDataHub/sft/rec_reason_training_task.json",
+      "columns": {
+          "prompt": "instruction",
+          "query": "input",
+          "response": "output",
+          "history": ""
+      }
   }
 }
