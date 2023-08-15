@@ -1,7 +1,7 @@
 import os
 import torch
+from typing import TYPE_CHECKING
 
-from transformers.modeling_utils import PreTrainedModel
 from peft import (
     PeftModel,
     TaskType,
@@ -12,19 +12,22 @@ from peft.utils import CONFIG_NAME, WEIGHTS_NAME
 
 from llmtuner.extras.logging import get_logger
 from llmtuner.extras.save_and_load import load_trainable_params
-from llmtuner.hparams import ModelArguments, FinetuningArguments
+
+if TYPE_CHECKING:
+    from transformers.modeling_utils import PreTrainedModel
+    from llmtuner.hparams import ModelArguments, FinetuningArguments
 
 
 logger = get_logger(__name__)
 
 
 def init_adapter(
-    model: PreTrainedModel,
-    model_args: ModelArguments,
-    finetuning_args: FinetuningArguments,
+    model: "PreTrainedModel",
+    model_args: "ModelArguments",
+    finetuning_args: "FinetuningArguments",
     is_trainable: bool,
     is_mergeable: bool
-) -> PreTrainedModel:
+) -> "PreTrainedModel":
     r"""
     Initializes the adapters.
 
@@ -36,7 +39,7 @@ def init_adapter(
     if finetuning_args.finetuning_type == "none" and is_trainable:
         raise ValueError("You cannot use finetuning_type=none while training.")
 
-    if finetuning_args.finetuning_type == "full":
+    if finetuning_args.finetuning_type == "full" and is_trainable:
         logger.info("Fine-tuning method: Full")
         model = model.float()
 
@@ -62,7 +65,7 @@ def init_adapter(
             assert os.path.exists(os.path.join(model_args.checkpoint_dir[0], CONFIG_NAME)), \
                 "The given checkpoint may be not a LoRA checkpoint, please specify `--finetuning_type full/freeze` instead."
 
-            if (is_trainable and model_args.resume_lora_training) or (not is_mergeable): # continually train on the lora weights
+            if (is_trainable and finetuning_args.resume_lora_training) or (not is_mergeable): # continually fine-tuning
                 checkpoints_to_merge, latest_checkpoint = model_args.checkpoint_dir[:-1], model_args.checkpoint_dir[-1]
             else:
                 checkpoints_to_merge = model_args.checkpoint_dir

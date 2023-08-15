@@ -1,12 +1,14 @@
 import os
 import json
 import torch
-from typing import Dict, List, Optional, Tuple, Union
-from transformers.trainer import PredictionOutput
-from transformers.modeling_utils import PreTrainedModel
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
 
 from llmtuner.extras.logging import get_logger
 from llmtuner.tuner.core.trainer import PeftTrainer
+
+if TYPE_CHECKING:
+    from transformers.trainer import PredictionOutput
+    from transformers.modeling_utils import PreTrainedModel
 
 
 logger = get_logger(__name__)
@@ -23,7 +25,7 @@ class PairwisePeftTrainer(PeftTrainer):
 
     def compute_loss(
         self,
-        model: PreTrainedModel,
+        model: "PreTrainedModel",
         inputs: Dict[str, torch.Tensor],
         return_outputs: Optional[bool] = False
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, List[torch.Tensor]]]:
@@ -40,13 +42,15 @@ class PairwisePeftTrainer(PeftTrainer):
         """
         batch_size = inputs["input_ids"].size(0) // 2
         _, _, values = model(**inputs, output_hidden_states=True, return_dict=True)
+        if values.size(0) != inputs["input_ids"].size(0):
+            values = torch.transpose(values, 0, 1)
         r_accept, r_reject = values[:, -1].split(batch_size, dim=0)
         loss = -torch.log(torch.sigmoid(r_accept - r_reject)).mean()
         return (loss, [loss, r_accept, r_reject]) if return_outputs else loss
 
     def save_predictions(
         self,
-        predict_results: PredictionOutput
+        predict_results: "PredictionOutput"
     ) -> None:
         r"""
         Saves model predictions to `output_dir`.
